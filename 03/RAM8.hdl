@@ -1,0 +1,63 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/3/a/RAM8.hdl
+/**
+ * Memory of eight 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM8 {
+    IN in[16], load, address[3];
+    OUT out[16];
+
+    PARTS:
+    // addresses
+    // [ 2, 1, 0 ] <- we care abt this
+    Not(in=address[0], out=naddress0);
+    Not(in=address[1], out=naddress1);
+    Not(in=address[2], out=naddress2);
+    // 000
+    And(a=naddress0, b=naddress1, out=address00);
+    And(a=address00, b=naddress2, out=address000);
+    // 001
+    And(a=address[0], b=naddress1, out=address01);
+    And(a=address01, b=naddress2, out=address001);
+    // 010
+    And(a=naddress0, b=address[1], out=address10);
+    And(a=address10, b=naddress2, out=address010);
+    // 011
+    And(a=address[0], b=address[1], out=address11);
+    And(a=address11, b=naddress2, out=address011);
+    // 100
+    And(a=address00, b=address[2], out=address100);
+    // 101
+    And(a=address01, b=address[2], out=address101);
+    // 110
+    And(a=address10, b=address[2], out=address110);
+    // 111
+    And(a=address11, b=address[2], out=address111);
+    
+    // load & address to check for address for that particular register
+    And(a=address000, b=load, out=load000);
+    And(a=address001, b=load, out=load001);
+    And(a=address010, b=load, out=load010);
+    And(a=address011, b=load, out=load011);
+    And(a=address100, b=load, out=load100);
+    And(a=address101, b=load, out=load101);
+    And(a=address110, b=load, out=load110);
+    And(a=address111, b=load, out=load111);
+    // 8 of registers w custom load
+    Register(in=in, load=load000, out=register000out);
+    Register(in=in, load=load001, out=register001out);
+    Register(in=in, load=load010, out=register010out);
+    Register(in=in, load=load011, out=register011out);
+    Register(in=in, load=load100, out=register100out);
+    Register(in=in, load=load101, out=register101out);
+    Register(in=in, load=load110, out=register110out);
+    Register(in=in, load=load111, out=register111out);
+
+    // choose register
+    Mux8Way16(a=register000out, b=register001out, c=register010out, d=register011out, e=register100out, f=register101out, g=register110out, h=register111out, sel=address, out=out);
+}

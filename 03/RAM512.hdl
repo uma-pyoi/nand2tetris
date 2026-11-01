@@ -1,0 +1,66 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/3/b/RAM512.hdl
+/**
+ * Memory of 512 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM512 {
+    IN in[16], load, address[9];
+    OUT out[16];
+
+    PARTS:
+    // address
+    // [ 8, 7, 6 ] <- we care abt this
+    // [ 5, 4, 3 ] <- ram64
+    // [ 2 ,1 ,0 ] <- ram8
+    Not(in=address[6], out=naddress6);
+    Not(in=address[7], out=naddress7);
+    Not(in=address[8], out=naddress8);
+    // 000
+    And(a=naddress6, b=naddress7, out=address00);
+    And(a=address00, b=naddress8, out=address000);
+    // 001
+    And(a=address[6], b=naddress7, out=address01);
+    And(a=address01, b=naddress8, out=address001);
+    // 010
+    And(a=naddress6, b=address[7], out=address10);
+    And(a=address10, b=naddress8, out=address010);
+    // 011
+    And(a=address[6], b=address[7], out=address11);
+    And(a=address11, b=naddress8, out=address011);
+    // 100
+    And(a=address00, b=address[8], out=address100);    
+    // 101
+    And(a=address01, b=address[8], out=address101);    
+    // 110
+    And(a=address10, b=address[8], out=address110);    
+    // 111
+    And(a=address11, b=address[8], out=address111);    
+
+    // load & address to check for address
+    And(a=load, b=address000, out=load000);
+    And(a=load, b=address001, out=load001);
+    And(a=load, b=address010, out=load010);
+    And(a=load, b=address011, out=load011);
+    And(a=load, b=address100, out=load100);
+    And(a=load, b=address101, out=load101);
+    And(a=load, b=address110, out=load110);
+    And(a=load, b=address111, out=load111);
+
+    // ram64s
+    RAM64(in=in, load=load000, address=address[0..5], out=ram000out);
+    RAM64(in=in, load=load001, address=address[0..5], out=ram001out);
+    RAM64(in=in, load=load010, address=address[0..5], out=ram010out);
+    RAM64(in=in, load=load011, address=address[0..5], out=ram011out);
+    RAM64(in=in, load=load100, address=address[0..5], out=ram100out);
+    RAM64(in=in, load=load101, address=address[0..5], out=ram101out);
+    RAM64(in=in, load=load110, address=address[0..5], out=ram110out);
+    RAM64(in=in, load=load111, address=address[0..5], out=ram111out);
+
+    // choose
+    Mux8Way16(a=ram000out, b=ram001out, c=ram010out, d=ram011out, e=ram100out, f=ram101out, g=ram110out, h=ram111out, sel=address[6..8], out=out);
+}

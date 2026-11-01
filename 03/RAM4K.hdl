@@ -1,0 +1,67 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/3/b/RAM4K.hdl
+/**
+ * Memory of 4K 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM4K {
+    IN in[16], load, address[12];
+    OUT out[16];
+
+    PARTS:
+    // address
+    // [ 11, 10, 9 ] <- we care abt this
+    // [ 8, 7, 6 ] <- ram512
+    // [ 5, 4, 3 ] <- ram64
+    // [ 2 ,1 ,0 ] <- ram8
+    Not(in=address[9], out=naddress9);
+    Not(in=address[10], out=naddress10);
+    Not(in=address[11], out=naddress11);
+    // 000
+    And(a=naddress9, b=naddress10, out=fulladdress00);
+    And(a=fulladdress00, b=naddress11, out=fulladdress000);
+    // 001
+    And(a=address[9], b=naddress10, out=fulladdress01);
+    And(a=fulladdress01, b=naddress11, out=fulladdress001);
+    // 010
+    And(a=naddress9, b=address[10], out=fulladdress10);
+    And(a=fulladdress10, b=naddress11, out=fulladdress010);
+    // 011
+    And(a=address[9], b=address[10], out=fulladdress11);
+    And(a=fulladdress11, b=naddress11, out=fulladdress011);
+    // 100
+    And(a=fulladdress00, b=address[11], out=fulladdress100);    
+    // 101
+    And(a=fulladdress01, b=address[11], out=fulladdress101);    
+    // 110 
+    And(a=fulladdress10, b=address[11], out=fulladdress110);    
+    // 111
+    And(a=fulladdress11, b=address[11], out=fulladdress111);
+
+    // load & address to check address
+    And(a=load, b=fulladdress000, out=load000);    
+    And(a=load, b=fulladdress001, out=load001);    
+    And(a=load, b=fulladdress010, out=load010);    
+    And(a=load, b=fulladdress011, out=load011);    
+    And(a=load, b=fulladdress100, out=load100);    
+    And(a=load, b=fulladdress101, out=load101);    
+    And(a=load, b=fulladdress110, out=load110);    
+    And(a=load, b=fulladdress111, out=load111);    
+
+    // ram512s
+    RAM512(in=in, load=load000, address=address[0..8], out=ram000out);
+    RAM512(in=in, load=load001, address=address[0..8], out=ram001out);
+    RAM512(in=in, load=load010, address=address[0..8], out=ram010out);
+    RAM512(in=in, load=load011, address=address[0..8], out=ram011out);
+    RAM512(in=in, load=load100, address=address[0..8], out=ram100out);
+    RAM512(in=in, load=load101, address=address[0..8], out=ram101out);
+    RAM512(in=in, load=load110, address=address[0..8], out=ram110out);
+    RAM512(in=in, load=load111, address=address[0..8], out=ram111out);
+
+    // choose
+    Mux8Way16(a=ram000out, b=ram001out, c=ram010out, d=ram011out, e=ram100out, f=ram101out, g=ram110out, h=ram111out, sel=address[9..11], out=out);
+}

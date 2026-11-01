@@ -1,0 +1,39 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/3/a/PC.hdl
+/**
+ * A 16-bit counter.
+ * if      reset(t): out(t+1) = 0
+ * else if load(t):  out(t+1) = in(t)
+ * else if inc(t):   out(t+1) = out(t) + 1
+ * else              out(t+1) = out(t)
+ */
+CHIP PC {
+    IN in[16], reset, load, inc;
+    OUT out[16];
+    
+    PARTS:
+    // a register already can store/write
+    // need to add reset & inc
+    // priority: reset > load > inc
+    // inc
+    // increment should happen once every clock cycle
+    // if inc(t) then out(t+1) = out(t) + 1 <- tick (cycle 1) 
+    // if inc(t+1) then out(t+2) = out(t+1) <- tock (cycle 1)
+    // if inc(t+2) then out(t+3) = out(t+2) + 1 <- tick (cycle 2)
+    Not(in=in[0], out=nin0);
+    And(a=in[0], b=nin0, out=const0);
+    Not(in=const0, out=const1);
+
+    Not16(in=in, out=nin);
+    And16(a=in, b=nin, out=const016);
+
+   
+    Inc16(in=outcopy, out=incedoutcopy); 
+    Mux16(a=outcopy, b=incedoutcopy, sel=inc, out=incedout); 
+    Mux16(a=incedout, b=in, sel=load, out=loadedout);
+    Mux16(a=loadedout, b=const016, sel=reset, out=resetedout);
+    // Register works as a storage device to out(t)=in(t-1)
+    Register(in=resetedout, load=const1, out=outcopy, out=out);
+}

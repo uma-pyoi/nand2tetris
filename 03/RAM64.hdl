@@ -1,0 +1,80 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/3/a/RAM64.hdl
+/**
+ * Memory of sixty four 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM64 {
+    IN in[16], load, address[6];
+    OUT out[16];
+
+    PARTS:
+    // address doubled cuz xxxyyy
+    // xxx = address inside ram64 (MSB aka most significant bits) [ 5, 4, 3 ]
+    // yyy = address inside ram8 (LSB aka least significant bits) [ 2, 1, 0 ]
+    // in ram64 check for xxx(MSB) and let ram8 handle yyy(LSB)
+    // [ 5, 4, 3 ] <- we care abt this
+    // [ 2, 1, 0 ] <- ram8
+    
+    // addresses
+    Not(in=address[3], out=naddress3);    
+    Not(in=address[4], out=naddress4);    
+    Not(in=address[5], out=naddress5);    
+    // 000
+    And(a=naddress3, b=naddress4, out=address00);
+    And(a=address00, b=naddress5, out=address000);
+    // 001
+    And(a=address[3], b=naddress4, out=address01);
+    And(a=address01, b=naddress5, out=address001);
+    // 010
+    And(a=naddress3, b=address[4], out=address10);
+    And(a=address10, b=naddress5, out=address010);
+    // 011
+    And(a=address[3], b=address[4], out=address11);
+    And(a=address11, b=naddress5, out=address011);
+    // 100
+    And(a=address00, b=address[5], out=address100);
+    // 101
+    And(a=address01, b=address[5], out=address101);
+    // 110
+    And(a=address10, b=address[5], out=address110);
+    // 111
+    And(a=address11, b=address[5], out=address111);
+
+    // load & address to check address
+    And(a=load, b=address000, out=load000);
+    And(a=load, b=address001, out=load001);
+    And(a=load, b=address010, out=load010);
+    And(a=load, b=address011, out=load011);
+    And(a=load, b=address100, out=load100);
+    And(a=load, b=address101, out=load101);
+    And(a=load, b=address110, out=load110);
+    And(a=load, b=address111, out=load111);
+    
+    // ram8s
+    RAM8(in=in, load=load000, address=address[0..2], out=ram000out);
+    RAM8(in=in, load=load001, address=address[0..2], out=ram001out);
+    RAM8(in=in, load=load010, address=address[0..2], out=ram010out);
+    RAM8(in=in, load=load011, address=address[0..2], out=ram011out);
+    RAM8(in=in, load=load100, address=address[0..2], out=ram100out);
+    RAM8(in=in, load=load101, address=address[0..2], out=ram101out);
+    RAM8(in=in, load=load110, address=address[0..2], out=ram110out);
+    RAM8(in=in, load=load111, address=address[0..2], out=ram111out);
+
+    // choose
+    Mux8Way16(a=ram000out, b=ram001out, c=ram010out, d=ram011out, e=ram100out, f=ram101out, g=ram110out, h=ram111out, sel=address[3..5], out=out);
+
+    // fun fact
+    // ERROR: when written to 13 got also written to 45
+    // 45: 101101 (MSB is 2 in power of n-1)
+    // to count: for 45 its 100000 where 1 is 32, we need 13
+    // 13: 001101 
+    // SOLUTION: forgot to change naddress5 to address[5]
+    // so the correct address's MSB was inverted
+    // resulting in
+    // address 45 (101101) being (001101) which is 13
+}
